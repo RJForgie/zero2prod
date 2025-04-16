@@ -11,24 +11,42 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Cache cargo dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install tooling
+      run: |
+        cargo install cargo-audit
+        cargo install cargo-llvm-cov
+    
     - name: Build
       run: cargo build --verbose
+    
     - name: Run tests
       run: cargo test --verbose
+    
     - name: Linting
       run: cargo clippy -- -D warnings
+    
     - name: Formatting
       run: cargo fmt -- --check
-    - name: Install cargo-audit
-      run: cargo install cargo-audit
+    
     - name: Audit Crates
       run: cargo audit
-    - name: Install cargo-llvm-cov
-      run: cargo install cargo-llvm-cov
+    
     - name: Code Coverage
       run: cargo llvm-cov --summary-only
